@@ -19,16 +19,16 @@ interface ClienteService {
     fun cadastrarCliente(@Body cliente: Cliente): Call<Cliente>
 
     @GET("clientes")
-    fun exibirClientes(): Call<List<Cliente>>
+    fun exibirTodosOsClientes(): Call<List<Cliente>>
 
     @GET("clientes/{id}")
     fun buscarClientePorId(@Path("id") id : Long): Call<Cliente>
 
-    @DELETE("clientes/{id}")
-    fun excluirCliente(@Path("id") id : Long): Call<Cliente>
+    @DELETE("clientes")
+    fun excluirCliente(@Body cliente: Cliente): Call<Unit>
 
     @PUT("clientes")
-    fun exbibirClientes(@Body cliente: Cliente): Call<Cliente>
+    fun atualizarClientes(@Body cliente: Cliente): Call<Cliente>
 
 
 }

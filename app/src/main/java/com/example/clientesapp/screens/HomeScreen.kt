@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
@@ -37,20 +38,48 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.clientesapp.Greeting
 import com.example.clientesapp.R
+import com.example.clientesapp.model.Cliente
+import com.example.clientesapp.service.RetrofitFactory
 import com.example.clientesapp.ui.theme.ClientesappTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import retrofit2.await
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
+    // Criar uma instancia do RetrofitFactory
+    val clienteApi = RetrofitFactory().getClienteService()
+
+    // Criar uma variavel de estado que vai recbeer a lista que vai chegar da api
+    var clientes by remember {
+        mutableStateOf(listOf<Cliente>())
+    }
+
+    // Chamar no momento que for executar a homeScreen  ( tela )
+   LaunchedEffect(Dispatchers.IO) {
+       clientes = clienteApi.exibirTodosOsClientes().await()
+       println(clientes)
+   }
+
+
+
     Scaffold(
         topBar = {
             BarraDeTitulo()
@@ -88,8 +117,9 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             }
 
             LazyColumn {
-                items(count = 10){
-                    ClientCard()
+                                // Valor Obtido da API
+                items(clientes){ cliente ->
+                    ClientCard(cliente)
                 }
             }
         }
@@ -98,7 +128,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ClientCard(modifier: Modifier = Modifier) {
+fun ClientCard(cliente: Cliente) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -106,7 +136,7 @@ fun ClientCard(modifier: Modifier = Modifier) {
             .padding(
                 start = 8.dp,
                 end = 8.dp,
-                bottom = 8.dp
+                bottom = 4.dp
             ),
         colors = CardDefaults.cardColors(
             contentColor = MaterialTheme.colorScheme.primary
@@ -115,21 +145,19 @@ fun ClientCard(modifier: Modifier = Modifier) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(86.dp),
+                .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             Column {
-                Text(text = "Nome do cliente")
-                Text(text = "Email do client")
+                Text(text = cliente.nome, fontWeight = FontWeight.Bold)
+                Text(text = cliente.email, fontSize = 12.sp)
             }
-
             Icon(
                 imageVector = Icons.Default.Delete,
-                contentDescription = "Excluir"
+                contentDescription = "Deletar"
             )
         }
-
     }
 }
 
@@ -137,7 +165,7 @@ fun ClientCard(modifier: Modifier = Modifier) {
 @Composable
 private fun ClientCardPreview() {
     ClientesappTheme {
-        ClientCard()
+        ClientCard(Cliente())
     }
 }
 
