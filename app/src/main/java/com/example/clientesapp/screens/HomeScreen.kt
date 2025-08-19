@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -35,7 +35,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,50 +44,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.clientesapp.Greeting
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.clientesapp.R
 import com.example.clientesapp.model.Cliente
 import com.example.clientesapp.service.RetrofitFactory
 import com.example.clientesapp.ui.theme.ClientesappTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import retrofit2.await
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
-    // Criar uma instancia do RetrofitFactory
-    val clienteApi = RetrofitFactory().getClienteService()
-
-    // Criar uma variavel de estado que vai recbeer a lista que vai chegar da api
-    var clientes by remember {
-        mutableStateOf(listOf<Cliente>())
-    }
-
-    // Chamar no momento que for executar a homeScreen  ( tela )
-   LaunchedEffect(Dispatchers.IO) {
-       clientes = clienteApi.exibirTodosOsClientes().await()
-       println(clientes)
-   }
 
 
+    // Navegaçao entre telas
+    var navController = rememberNavController()
 
     Scaffold(
         topBar = {
             BarraDeTitulo()
         },
         bottomBar = {
-            BarraDeNavegacao()
+            BarraDeNavegacao(navController)
         },
         floatingActionButton = {
-            BotaoCadastrar()
+            BotaoCadastrar(navController)
         }
 
     )
@@ -101,11 +89,44 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(16.dp)
-            ){
-                Icon(
+            NavHost(
+                navController = navController,
+                startDestination = "Home"
+            ) {
+                composable(route = "Home") { TelaHome(paddingValues) }
+                composable(route = "Form") { FormClient() }
+            }
+
+        }
+
+    }
+}
+
+@Composable
+fun TelaHome(paddingValues: PaddingValues) {
+    // Criar uma instancia do RetrofitFactory
+    val clienteApi = RetrofitFactory().getClienteService()
+
+    // Criar uma variavel de estado que vai recbeer a lista que vai chegar da api
+    var clientes by remember {
+        mutableStateOf(listOf<Cliente>())
+    }
+
+    // Chamar no momento que for executar a homeScreen  ( tela )
+    LaunchedEffect(Dispatchers.IO) {
+        clientes = clienteApi.exibirTodosOsClientes().await()
+
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+        ){
+            Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Icone da lista de clientes",
                     tint = MaterialTheme.colorScheme.onBackground
@@ -114,17 +135,17 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 Text(
                     text = "Lista de clientes"
                 )
-            }
-
-            LazyColumn {
-                                // Valor Obtido da API
-                items(clientes){ cliente ->
-                    ClientCard(cliente)
-                }
+        }
+        LazyColumn {
+            // Valor Obtido da API
+            items(clientes){ cliente ->
+                ClientCard(cliente)
             }
         }
 
     }
+
+
 }
 
 @Composable
@@ -222,14 +243,14 @@ private fun BarraDeTituloPreview() {
 }
 
 @Composable
-fun BarraDeNavegacao(modifier: Modifier = Modifier) {
+fun BarraDeNavegacao(navController: NavHostController) {
     NavigationBar (
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary
     ) {
         NavigationBarItem(
             selected = false,
-            onClick = {},
+            onClick = {navController.navigate(route = "Home")},
             icon = {
                 Icon(
                     imageVector = Icons.Default.Home,
@@ -282,9 +303,9 @@ fun BarraDeNavegacao(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BotaoCadastrar(modifier: Modifier = Modifier) {
+fun BotaoCadastrar(navController: NavHostController) {
     FloatingActionButton(
-        onClick = {},
+        onClick = {navController.navigate(route = "Form")},
         containerColor = MaterialTheme.colorScheme.tertiary
     ) {
         Icon(
@@ -301,21 +322,9 @@ fun BotaoCadastrar(modifier: Modifier = Modifier) {
 
 
 
-@Preview
-@Composable
-private fun BotaoCadastrarPreview() {
-    ClientesappTheme {
-        BotaoCadastrar()
-    }
-}
 
-@Preview
-@Composable
-private fun BarraDeNavegacaoPreview() {
-    ClientesappTheme {
-        BarraDeNavegacao()
-    }
-}
+
+
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
