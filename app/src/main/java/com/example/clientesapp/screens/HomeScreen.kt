@@ -24,11 +24,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -56,9 +59,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.clientesapp.R
 import com.example.clientesapp.model.Cliente
+import com.example.clientesapp.service.ClienteService
 import com.example.clientesapp.service.RetrofitFactory
 import com.example.clientesapp.ui.theme.ClientesappTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import retrofit2.await
 
 @Composable
@@ -94,7 +100,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 startDestination = "Home"
             ) {
                 composable(route = "Home") { TelaHome(paddingValues) }
-                composable(route = "Form") { FormClient() }
+                composable(route = "Form") { FormClient(navController) }
             }
 
         }
@@ -111,6 +117,8 @@ fun TelaHome(paddingValues: PaddingValues) {
     var clientes by remember {
         mutableStateOf(listOf<Cliente>())
     }
+
+
 
     // Chamar no momento que for executar a homeScreen  ( tela )
     LaunchedEffect(Dispatchers.IO) {
@@ -136,10 +144,15 @@ fun TelaHome(paddingValues: PaddingValues) {
                     text = "Lista de clientes"
                 )
         }
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(
+                bottom = 80.dp
+            )
+        ) {
+
             // Valor Obtido da API
             items(clientes){ cliente ->
-                ClientCard(cliente)
+                ClientCard(cliente,clienteApi)
             }
         }
 
@@ -149,7 +162,16 @@ fun TelaHome(paddingValues: PaddingValues) {
 }
 
 @Composable
-fun ClientCard(cliente: Cliente) {
+fun ClientCard(cliente: Cliente, clienteApi: ClienteService,) {
+    var mostrarTelaDePergunta by remember {
+        mutableStateOf(value = false)
+    }
+
+    var mostrarTelaDeExclusaoConcluida by remember {
+        mutableStateOf(value = false)
+    }
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -174,21 +196,86 @@ fun ClientCard(cliente: Cliente) {
                 Text(text = cliente.nome, fontWeight = FontWeight.Bold)
                 Text(text = cliente.email, fontSize = 12.sp)
             }
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Deletar"
+            IconButton(
+                onClick = {mostrarTelaDePergunta = true}
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Deletar"
+                )
+            }
+        }
+
+        if(mostrarTelaDePergunta){
+            AlertDialog(
+                onDismissRequest = {mostrarTelaDePergunta = false},
+                title = {
+                    Text(
+                        text = "Confirmar Exclusão",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = { Text(text = "Confirma a exclusão do registro ${cliente.nome}", fontSize = 15.sp) },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            // Chamada para deletar
+                            GlobalScope.launch(Dispatchers.IO) {
+                                clienteApi.excluirCliente(cliente)
+                                println("***** DELETOU O ${cliente} ******")
+                                mostrarTelaDeExclusaoConcluida = true
+
+                            }
+
+                        }
+                    ) {
+                        Text(
+                            text = "Confirmar"
+                        )
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = {mostrarTelaDePergunta = false}
+                    ) {
+                        Text(
+                            text = "Cancelar"
+                        )
+
+                    }
+                }
             )
         }
+
+        if(mostrarTelaDeExclusaoConcluida){
+            AlertDialog(
+                onDismissRequest = {mostrarTelaDeExclusaoConcluida = false},
+                title = {
+                    Text(
+                        text = "Exclusão Concluida",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = { Text(text = "Exclusão concluida com sucesso", fontSize = 15.sp) },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            mostrarTelaDeExclusaoConcluida = false
+                            mostrarTelaDePergunta = false
+                        }
+                    ) {
+                        Text(
+                            text = "Confirmar"
+                        )
+                    }
+                },
+            )
+        }
+
     }
 }
 
-@Preview
-@Composable
-private fun ClientCardPreview() {
-    ClientesappTheme {
-        ClientCard(Cliente())
-    }
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

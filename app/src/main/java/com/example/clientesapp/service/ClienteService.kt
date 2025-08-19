@@ -2,9 +2,11 @@ package com.example.clientesapp.service
 
 import com.example.clientesapp.model.Cliente
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -24,8 +26,9 @@ interface ClienteService {
     @GET("clientes/{id}")
     fun buscarClientePorId(@Path("id") id : Long): Call<Cliente>
 
-    @DELETE("clientes")
-    fun excluirCliente(@Body cliente: Cliente): Call<Unit>
+    // Fazer isso quando na exclusao o metodo requisitar um body ( estranho quase nunca acontece )
+    @HTTP(method = "DELETE", path = "clientes", hasBody = true)
+    suspend fun excluirCliente(@Body cliente: Cliente): Response<Unit>
 
     @PUT("clientes")
     fun atualizarClientes(@Body cliente: Cliente): Call<Cliente>

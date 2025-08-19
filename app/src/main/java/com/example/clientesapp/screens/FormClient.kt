@@ -1,16 +1,22 @@
 package com.example.clientesapp.screens
 
 import android.util.Patterns
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,10 +27,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.clientesapp.model.Cliente
 import com.example.clientesapp.service.RetrofitFactory
 import com.example.clientesapp.ui.theme.ClientesappTheme
@@ -34,7 +43,7 @@ import kotlinx.coroutines.launch
 import retrofit2.await
 
 @Composable
-fun FormClient(modifier: Modifier = Modifier) {
+fun FormClient(navController: NavHostController) {
 
 
     // Variaveis de estado para utilizar no outlined
@@ -58,6 +67,11 @@ fun FormClient(modifier: Modifier = Modifier) {
         return !isNomeError && !isEmailError
     }
 
+    // Variável que vai exibir a caixa de diálogo
+    var mostrarTelaSucesso by remember {
+        mutableStateOf(value = false)
+    }
+
 
     // Criar uma instancia do RetrofitFactory
     val clienteApi = RetrofitFactory().getClienteService()
@@ -68,6 +82,22 @@ fun FormClient(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+
+        Row (
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription =  "Iconde do cadastro",
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+            )
+            Text(
+                text = "Novo Cliente",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
         OutlinedTextField(
             value = nomeCLiente,
             onValueChange = {
@@ -152,7 +182,7 @@ fun FormClient(modifier: Modifier = Modifier) {
                     // GlobalScope quando estiver dentro de um botao
                     GlobalScope.launch(Dispatchers.IO) {                     // Espera o servidor devolver o cliente ( IMPORTANTE )
                         val novoCLiente = clienteApi.cadastrarCliente(cliente).await()
-                        println(novoCLiente)
+                        mostrarTelaSucesso = true
                     }
                 }else {
                     println("****** OS DADOS ESTÃO INCORRETOS *******")
@@ -160,6 +190,27 @@ fun FormClient(modifier: Modifier = Modifier) {
             }
         ) {
             Text(text = "CADASTRAR CLIENTE")
+        }
+
+        if(mostrarTelaSucesso){
+            // Elemento Usado para fazer modals de alert caso algo acontece, usar ele quando der errado uma hcamada ou caso ela funcione
+            AlertDialog(
+                onDismissRequest = {},
+                title = {
+                    Text(
+                        text = "Cadastro Realizado!",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = { Text(text = "CADASTRO REALIZADO COM SUCESSO!") },
+                confirmButton = {
+                    Button(
+                        onClick = {navController.navigate(route = "Home")}
+                    ) {
+                        Text(text = "Voltar")
+                    }
+                }
+            )
         }
     }
 }
@@ -169,13 +220,3 @@ fun FormClient(modifier: Modifier = Modifier) {
 
 
 
-
-
-
-@Preview(showBackground = true)
-@Composable
-private fun FormClientPreview() {
-    ClientesappTheme {
-        FormClient()
-    }
-}
